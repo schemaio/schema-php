@@ -1,10 +1,10 @@
 <?php
 /**
- * Forward // PHP Template Framework
+ * Schema PHP Template Framework
  *
- * @version  1.0.2
- * @link 	 https://getfwd.com
- * @license  http://www.apache.org/licenses/LICENSE-2.0
+ * @version  1.1.6
+ * @link     https://schema.io
+ * @license  http://opensource.org/licenses/mit MIT
  */
 
 /* -----------------------------------------------------

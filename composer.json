@@ -1,14 +1,14 @@
 {
-	"name": "getfwd/fwd-php",
-	"description": "Forward PHP Template Framework",
-	"homepage": "https://getfwd.com/php",
+	"name": "schemaio/schema-php",
+	"description": "Schema PHP Template Framework",
+	"homepage": "https://schema.io",
 	"type": "project",
-	"keywords": ["fwd", "ecommerce", "template", "framework"],
-	"license": "Apache-2.0",
+	"keywords": ["schema", "commerce", "template", "framework"],
+	"license": "MIT",
 	"support": {
-		"email": "help@getfwd.com",
-		"irc": "irc://irc.freenode.org/fwdphp",
-		"issues": "https://github.com/getfwd/fwd-php/issues"
+		"email": "help@schema.io",
+		"irc": "irc://irc.freenode.org/schemaio",
+		"issues": "https://github.com/schemaio/schema-php/issues"
 	},
 	"require": {
 		"php": ">=5.3.10"
