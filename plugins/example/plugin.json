@@ -1,0 +1,8 @@
+{
+	"name": "example",
+	"label": "Example Plugin",
+	"description": "Just another example plugin",
+	"author": "Schema",
+	"version": "1.0.0",
+	"enabled": false
+}
