@@ -1,5 +1,5 @@
 ## schema-php
 
-*Schema is a platform to build and scale ecommerce.* This is the PHP template framework.
+*Schema is the platform to build and scale ecommerce.* This is the PHP template framework.
 
-Create an API account at https://schema.io
+Create a free account at https://schema.io

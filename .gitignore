@@ -1,0 +1,8 @@
+.fwd
+public
+local-config.php
+vendor
+composer.phar
+composer.lock
+.DS_Store
+Thumbs.db
