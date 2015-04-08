@@ -25,7 +25,10 @@ class Template
      */
     public static function route($request)
     {
-        $request['template'] = $request['template'] ?: Config::get('defaults.template', 'default');
+        if (!isset($request['template'])) {
+            $request['template'] = Config::get('defaults.template', 'default');
+        }
+        
         $config = self::config($request['template']);
 
         if (isset($config['extends'])) {
