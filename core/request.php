@@ -252,13 +252,26 @@ class Request
                 }
             }
 
+            $is_secure = $request['secure'] ? true : false;
+
             // Merge route values with request
             if (isset($route['request'])) {
                 $request = array_merge($request, (array)$route['request']);
             }
-
-            if ((isset($request['redirect']) && $request['redirect'])
-                || (isset($request['break']) && $request['break'])) {
+            // Special cases
+            if (isset($request['break']) && $request['break']) {
+                break;
+            }
+            if (isset($request['scheme']) && $request['scheme'] === 'https') {
+                $request['secure'] = true;
+            }
+            if ($request['secure'] && !$is_secure) {
+                $request['redirect'] = "https://{$request['host']}{$request['path']}";
+                if (isset($request['query'])) {
+                    $request['redirect'] .= "?{$request['query']}";
+                }
+            }
+            if (isset($request['redirect']) && $request['redirect']) {
                 break;
             }
         }
@@ -299,6 +312,10 @@ class Request
      */
     private static function route_match($test_val, $request_val)
     {
+        if ($test_val === $request_val) {
+            return true;
+        }
+
         $expr = $test_val;
         $expr = preg_replace('/\.([^\?\+\*])/', '\.\\1', $expr);
         $expr = str_replace('/', '\/', str_replace('\/', '/', $expr));
@@ -441,6 +458,10 @@ class Request
                 && $_SERVER["HTTP_X_REQUESTED_WITH"] == 'XMLHttpRequest')
             || isset($_REQUEST['__ajax'])
         ) ? true : false;
+
+        // Secure/HTTPS
+        $request['secure'] = !isset($_SERVER['HTTP_HOST'])
+            || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] && $_SERVER['HTTPS'] !== 'off');
 
         return $request;
     }
