@@ -252,26 +252,13 @@ class Request
                 }
             }
 
-            $is_secure = $request['secure'] ? true : false;
-
             // Merge route values with request
             if (isset($route['request'])) {
                 $request = array_merge($request, (array)$route['request']);
             }
-            // Special cases
-            if (isset($request['break']) && $request['break']) {
-                break;
-            }
-            if (isset($request['scheme']) && $request['scheme'] === 'https') {
-                $request['secure'] = true;
-            }
-            if ($request['secure'] && !$is_secure) {
-                $request['redirect'] = "https://{$request['host']}{$request['path']}";
-                if (isset($request['query'])) {
-                    $request['redirect'] .= "?{$request['query']}";
-                }
-            }
-            if (isset($request['redirect']) && $request['redirect']) {
+
+            if ((isset($request['redirect']) && $request['redirect'])
+                || (isset($request['break']) && $request['break'])) {
                 break;
             }
         }
@@ -312,10 +299,6 @@ class Request
      */
     private static function route_match($test_val, $request_val)
     {
-        if ($test_val === $request_val) {
-            return true;
-        }
-
         $expr = $test_val;
         $expr = preg_replace('/\.([^\?\+\*])/', '\.\\1', $expr);
         $expr = str_replace('/', '\/', str_replace('\/', '/', $expr));
@@ -408,11 +391,12 @@ class Request
     public static function url($url, $parts = array())
     {
         // TODO: determine if this comes with cURL or if it needs to be replaced
-        $uri_parts = parse_url($url ?: $_SERVER['REQUEST_URI']);
+        $url = $url ?: (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
+        $uri_parts = parse_url($url);
 
         $default_parts = array(
             'scheme' => isset($_SERVER['HTTPS']) ? 'https' : 'http',
-            'host' => $_SERVER['HTTP_HOST'],
+            'host' => isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '',
             'path' => $uri_parts['path'],
             'query' => isset($uri_parts['query']) ? $uri_parts['query'] : null
         );
@@ -444,13 +428,16 @@ class Request
             $request['path'] = preg_replace('#^'.$uri_path.'#', '', $request['path']);
             $request['path'] = '/'.ltrim($request['path'], '/');
         }
+        if (!isset($request['path'])) {
+            $request['path'] = '/';
+        }
 
         // URL and URI
         $request['url'] = $url;
         $request['uri'] = $request['path'].(isset($request['query']) ? '?'.$request['query'] : '');
 
         // Method
-        $request['method'] = strtolower($_SERVER['REQUEST_METHOD']);
+        $request['method'] = isset($_SERVER['REQUEST_METHOD']) ? strtolower($_SERVER['REQUEST_METHOD']) : 'get';
         $request['get'] = $request['method'] == 'get';
         $request['post'] = $request['method'] == 'post';
         $request['ajax'] = (
@@ -458,10 +445,6 @@ class Request
                 && $_SERVER["HTTP_X_REQUESTED_WITH"] == 'XMLHttpRequest')
             || isset($_REQUEST['__ajax'])
         ) ? true : false;
-
-        // Secure/HTTPS
-        $request['secure'] = !isset($_SERVER['HTTP_HOST'])
-            || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] && $_SERVER['HTTPS'] !== 'off');
 
         return $request;
     }
