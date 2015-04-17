@@ -268,7 +268,7 @@ class Request
             }
             if ($request['secure'] && !$is_secure) {
                 $request['redirect'] = "https://{$request['host']}{$request['path']}";
-                if (isset($request['query'])) {
+                if ($request['query']) {
                     $request['redirect'] .= "?{$request['query']}";
                 }
             }
@@ -450,9 +450,12 @@ class Request
             $request['path'] = '/';
         }
 
+        // Query
+        $request['query'] = isset($request['query']) ? $request['query'] : null;
+
         // URL and URI
         $request['url'] = $url;
-        $request['uri'] = $request['path'].(isset($request['query']) ? '?'.$request['query'] : '');
+        $request['uri'] = $request['path'].($request['query'] ? '?'.$request['query'] : '');
 
         // Method
         $request['method'] = isset($_SERVER['REQUEST_METHOD']) ? strtolower($_SERVER['REQUEST_METHOD']) : 'get';
