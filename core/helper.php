@@ -750,8 +750,13 @@ class Helper
 
                 $request = Template::route($request);
 
-                $asset = '/assets/'.ltrim($asset_url, '/');
-                $asset_path = $request['template_path'].$asset;
+                $asset_path = '/assets/'.ltrim($asset_url, '/');
+                $asset_path = $request['template_path'].$asset_path;
+
+                $base = Config::path('uri');
+                if ($base !== '/') {
+                    $asset_path = $base.$asset_path;
+                }
 
                 if (!is_file($asset_path) && isset($request['extend_template_path'])) {
                     $extend_asset_path = $request['extend_template_path'].$asset;

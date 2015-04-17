@@ -10,8 +10,8 @@
     RewriteCond %{REQUEST_FILENAME} !-f [OR]
 
     # Restrict access to template assets and cached images
-    RewriteCond %{REQUEST_URI} !^/templates/[^/]+/(assets)/.*
-    RewriteCond %{REQUEST_URI} !^/core/cache/image.*
+    RewriteCond %{REQUEST_URI} !/templates/[^/]+/(assets)/.*
+    RewriteCond %{REQUEST_URI} !/core/cache/image.*
     
     # Rewrite everything else to index
     RewriteRule ^(.*)$ index.php [L]
