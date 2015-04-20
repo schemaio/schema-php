@@ -17,19 +17,6 @@ return array(
 
     'clients' => array(
 
-        // Example: Usage with routes for multi-client installs
-        'client-one' => array(
-            'id' => '',
-            'key' => ''
-        ),
-        'client-two' => array(
-            'id' => '',
-            'key' => ''
-        ),
-        'client-three' => array(
-            'id' => '',
-            'key' => ''
-        )
     ),
 
 
@@ -43,16 +30,6 @@ return array(
         array(
             'request' => array(
                 'template' => 'default'
-            )
-        ),
-        // Example: Multi-client routing by host
-        array(
-            'match' => array(
-                'host' => '*.client-one.host.com'
-            ),
-            'request' => array(
-                'client' => 'client-one',
-                'template' => 'client-template'
             )
         )
     ),
