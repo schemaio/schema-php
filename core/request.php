@@ -413,7 +413,7 @@ class Request
         $uri_parts = parse_url($url);
 
         $default_parts = array(
-            'scheme' => isset($_SERVER['HTTPS']) ? 'https' : 'http',
+            'scheme' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] ? 'https' : 'http',
             'host' => isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '',
             'path' => $uri_parts['path'],
             'query' => isset($uri_parts['query']) ? $uri_parts['query'] : null
