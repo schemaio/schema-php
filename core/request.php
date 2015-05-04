@@ -394,9 +394,9 @@ class Request
             $url .= (strpos($url, '?') === false ? '?__ajax' : '&__ajax');
         }
 
-        header("Location : {$url}", true, $permanent ? 301 : 302);
+        header("Location: {$url}", true, $permanent ? 301 : 302);
 
-        die();
+        exit();
     }
 
     /**
