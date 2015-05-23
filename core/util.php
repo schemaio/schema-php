@@ -898,7 +898,7 @@ function image_url($params)
             $file_data_link = $file->link_url('data');
             $file_data = $file->client()->get($file_data_link);
         }
-        if (!$file_data) {
+        if (!isset($file_data)) {
             // File does not exist
             if ($default || $if_exists !== false) {
                 return $default ?: '';
