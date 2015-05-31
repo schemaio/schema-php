@@ -25,6 +25,11 @@ class ArrayInterface extends \ArrayIterator
         return parent::offsetSet($key, $val);
     }
 
+    public function offsetExists($key)
+    {
+        return $this->$key !== null;
+    }
+
     public function offsetSet($key, $val)
     {
         parent::offsetSet($key, $val);
