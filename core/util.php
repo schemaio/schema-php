@@ -574,7 +574,7 @@ function age($date)
     $time = is_numeric($date) ? (int)$date : strtotime($date);
     $seconds_elapsed = (time() - $time);
 
-    if ($seconds_elapsed < 60) {
+    if ($seconds_elapsed < 60 && $seconds_elapsed >= 0) {
         return 'just now';
     } else if ($seconds_elapsed >= 60 && $seconds_elapsed < 3600) {
         $num = floor($seconds_elapsed / 60);
@@ -610,14 +610,24 @@ function age_date($date)
     if (!$time = strtotime($date)) {
         return '';
     }
-    // Today
-    if (date('Y-m-d') == date('Y-m-d', $time)) {
+    if (date('Y-m-d') == date('Y-m-d', $time) && ($time-5) < time()) {
+        // Today past
         return age($date);
+    } else if ($time > time() - 86400) {
+        if (date('Y-m-d', $time) === date('Y-m-d')) {
+            // Today future
+            return 'Today '.date('g:i A', $time);
+        }
+        if (date('Y-m-d', $time) === date('Y-m-d', time() + 86400)) {
+            // Tomorrow
+            return date('M j g:i A', $time);
+        }
     }
-    // Within 1 year?
-    if ($time >= time() - 31536000) {
+    if (date('Y', $time) === date('Y')) {
+        // Past
         return date('M j', $time);
     } else {
+        // Past year
         return date('M j, Y', $time);
     }
 }
