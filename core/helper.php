@@ -429,19 +429,19 @@ class Helper
             },
 
             /**
-             * Format number as localized money string
+             * Format number as localized currency string
              *
              *      Usage example:
              *          {$price = 10}
-             *          {$price|money} # $10.00
-             *          {(-$price)|money:true} # ($10.00)
+             *          {$price|currency} # $10.00
+             *          {(-$price)|currency:true} # ($10.00)
              *
              * @param  mixed $params Params or Money value amount
              * @param  bool $format (Optional) Flag to format amount with symbol and parantheses (default true)
              * @param  bool $negative (Optional) Flag to display negative amount (default true)
              * @param  string $locale (Optional) Locale flag related to 'setlocale' (default en_US.UTF-8)
             */
-            'money' => function($params, $format = true, $negative = true, $locale = null)
+            'currency' => function($params, $format = true, $negative = true, $locale = null)
             {
                 if (is_array($params)) {
                     $amount = isset($params['amount']) ? $params['amount'] : 0;
@@ -451,7 +451,15 @@ class Helper
                 } else {
                     $amount = $params;
                 }
-                return Util\money($amount, $format, $negative, $locale);
+                return Util\currency($amount, $format, $negative, $locale);
+            },
+
+            /**
+             * Alias for currency
+            */
+            'money' => function()
+            {
+                return call_user_func_array('\Schema\Util\currency', func_get_args());
             },
 
             /**

@@ -633,14 +633,14 @@ function age_date($date)
 }
 
 /**
- * Format number as localized money string
+ * Format number as localized currency string
  *
  * @param  string $amount Money value amount
  * @param  bool $format (Optional) Flag to display negative amount (default true)
  * @param  bool $negative (Optional) Flag to format amount with currency symbol and parantheses (default true)
  * @return string
  */
-function money($amount, $format = true, $negative = true)
+function currency($amount, $format = true, $negative = true, $locale = null)
 {
     // Allow negative?
     $amount = ($negative || $amount > 0) ? $amount : 0;
