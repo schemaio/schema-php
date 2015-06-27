@@ -809,10 +809,17 @@ function eval_conditions($conditions, $value)
                         $match = false;
                     }
                     break;
+                default:
+                    $value = isset($value[''][$key]) ? $value[''][$key] : null;
+                    $match = eval_conditions($compare, $value);
                 }
             } else {
                 $this_value = $value;
                 if (is_string($key) && strpos($key, '.') !== false) {
+                    // Look up to parent record with '..'?
+                    if (substr($key, 0, 2) === '..') {
+                        $key = substr($key, 1);
+                    }
                     $parts = explode('.', $key);
                     foreach ($parts as $part) {
                         if (isset($this_value[$part])) {
