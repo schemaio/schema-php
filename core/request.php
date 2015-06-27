@@ -12,22 +12,24 @@ namespace Schema;
 class Request
 {
     /**
-     * Request meta properties
      * @var array
      */
     private static $meta;
 
     /**
-     * Session singleton instance
-     * @var Session
+     * @var \Schema\Session
      */
     private static $session;
 
     /**
-     * Remote client connection object
      * @var \Schema\Client
      */
     private static $client;
+
+    /**
+     * @var \Schema\Settings
+     */
+    private static $settings;
 
     /**
      * Dispatched request vars
@@ -36,7 +38,7 @@ class Request
     private static $vars;
 
     /**
-     * Get curren request vars
+     * Get current request vars
      *
      * @return array
      */
@@ -715,7 +717,7 @@ class Request
     }
 
     /**
-     * Get forward client adapter
+     * Get client adapter
      *
      * @return \Schema\Client
      */
@@ -728,6 +730,20 @@ class Request
         }
 
         return self::$client;
+    }
+
+    /**
+     * Get client settings
+     *
+     * @return \Schema\Settings
+     */
+    public static function settings()
+    {
+        if (!self::$settings) {
+            self::$settings = new \Schema\Settings(self::client());
+        }
+
+        return self::$settings;
     }
 
     /**
