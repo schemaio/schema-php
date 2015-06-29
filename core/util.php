@@ -646,7 +646,11 @@ function currency($amount, $format = true, $negative = true, $locale = null)
     $amount = ($negative || $amount > 0) ? $amount : 0;
 
     if (!is_numeric($amount)) {
-        return '!numeric';
+        if (is_null($amount)) {
+            $amount = 0;
+        } else {
+            return '!numeric';
+        }
     }
 
     // Use localeconv
