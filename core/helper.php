@@ -434,29 +434,19 @@ class Helper
              *      Usage example:
              *          {$price = 10}
              *          {$price|currency} # $10.00
-             *          {(-$price)|currency:true} # ($10.00)
+             *          {(-$price)|currency} # ($10.00)
              *
-             * @param  mixed $params Params or Money value amount
-             * @param  bool $format (Optional) Flag to format amount with symbol and parantheses (default true)
-             * @param  bool $negative (Optional) Flag to display negative amount (default true)
-             * @param  string $locale (Optional) Locale flag related to 'setlocale' (default en_US.UTF-8)
-            */
-            'currency' => function($params, $format = true, $negative = true, $locale = null)
+             * @param  mixed $params Params or currency value amount
+             * @param  mixed $options Additional currency formatting options
+             */
+            'currency' => function($params, $options = null)
             {
-                if (is_array($params)) {
-                    $amount = isset($params['amount']) ? $params['amount'] : 0;
-                    $format = isset($params['format']) ? $params['format'] : $format;
-                    $negative = isset($params['negative']) ? $params['negative'] : $negative;
-                    $locale = isset($params['locale']) ? $params['locale'] : $locale;
-                } else {
-                    $amount = $params;
-                }
-                return Util\currency($amount, $format, $negative, $locale);
+                return Util\currency($params, $options);
             },
 
             /**
              * Alias for currency
-            */
+             */
             'money' => function()
             {
                 return call_user_func_array('\Schema\Util\currency', func_get_args());

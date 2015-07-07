@@ -578,7 +578,7 @@ function age($date)
         return 'just now';
     } else if ($seconds_elapsed >= 60 && $seconds_elapsed < 3600) {
         $num = floor($seconds_elapsed / 60);
-        $age = pluralize("{$num} minute");
+        $age = pluralize("{$num} min");
     } else if ($seconds_elapsed >= 3600 && $seconds_elapsed < 86400) {
         $num = floor($seconds_elapsed / 3600);
         $age = pluralize("{$num} hour");
@@ -635,54 +635,111 @@ function age_date($date)
 /**
  * Format number as localized currency string
  *
+ * Options:
  * @param  string $amount Money value amount
  * @param  bool $format (Optional) Flag to display negative amount (default true)
  * @param  bool $negative (Optional) Flag to format amount with currency symbol and parantheses (default true)
+ * @param  bool $locale (Optional) Locale identifier (default $globals.locale)
+ * @param  bool $code (Optional) Currency ISO code (default $globals.currency)
+ *
  * @return string
  */
-function currency($amount, $format = true, $negative = true, $locale = null)
+function currency($params, $options = null)
 {
+    $amount = 0;
+    $format = true;
+    $negative = true;
+    $code = isset($GLOBALS['currency']) ? $GLOBALS['currency'] : 'USD';
+    $locale = isset($GLOBALS['locale']) ? $GLOBALS['locale'] : 'en_US';
+
+    if (!is_array($params)) {
+        $amount = $params;
+    } else {
+        if (isset($params['amount'])) {
+            $amount = $params['amount'];
+        }
+        if (isset($params['format'])) {
+            $format = $params['format'];
+        }
+        if (isset($params['negative'])) {
+            $negative = $params['negative'];
+        }
+        if (isset($params['code'])) {
+            $code = $params['code'];
+        }
+    }
+    if (is_array($options)) {
+        if (isset($options['format'])) {
+            $format = $params['format'];
+        }
+        if (isset($options['negative'])) {
+            $negative = $params['negative'];
+        }
+        if (isset($options['code'])) {
+            $code = $params['code'];
+        }
+    }
+
     // Allow negative?
     $amount = ($negative || $amount > 0) ? $amount : 0;
 
     if (!is_numeric($amount)) {
-        if (is_null($amount)) {
+        if (is_null($amount) || $amount === '') {
             $amount = 0;
         } else {
             return '!numeric';
         }
     }
 
-    // Use localeconv
-    $lc = localeconv();
+    static $formatters;
 
-    // Format with symbol?
+    // Uses NumberFormatter if installed, falls back to localeconv with number_format
+    if (class_exists('\NumberFormatter')) {
+        if (!isset($formatters)) {
+            $formatters = array();
+        }
+        if (!isset($formatters[$locale])) {
+            $formatters[$locale] = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+        }
+    }
+
     if ($format) {
-        if ($amount < 0) {
-            // Nevative value
-            $result = '('.$lc['currency_symbol'].number_format(
-                abs(floatval($amount)),
-                $lc['frac_digits'],
-                $lc['decimal_point'],
-                $lc['thousands_sep']
-            ).')';
+
+        if ($formatters) {
+            // Use NumberFormatter
+            $result = $formatters[$locale]->formatCurrency($amount, $code);
         } else {
-            // Positive value
-            $result = $lc['currency_symbol'].number_format(
-                floatval($amount),
-                $lc['frac_digits'],
-                $lc['decimal_point'],
-                $lc['thousands_sep']
-            );
+            // Use localeconv
+            $prevlocale = setlocale(LC_MONETARY, "0");
+            $nextlocale = setlocale(LC_MONETARY, $locale);
+            if ($nextlocale) {
+                $result = money_format('%(i', floatval($amount));
+                setlocale(LC_MONETARY, $prevlocale);
+            } else {
+                // Fall back to number format
+                if ($amount < 0) {
+                    // Nevative value
+                    $result = '($'.number_format(abs(floatval($amount))).')';
+                } else {
+                    $result = '$'.number_format(floatval($amount));
+                }
+            }
         }
     } else {
-        // Number without currency symbol
-        $result = number_format(
-            floatval($amount),
-            $lc['frac_digits'],
-            $lc['decimal_point'],
-            $lc['thousands_sep']
-        );
+        // No currency code format
+        $result = floatval($amount);
+        /* TODO: enable when API supports locale input number parsing
+        // Use localeconv
+        $prevlocale = setlocale(LC_MONETARY, "0");
+        $nextlocale = setlocale(LC_MONETARY, $locale);
+        if ($nextlocale) {
+            $result = money_format('%!i', floatval($amount));
+            setlocale(LC_MONETARY, $prevlocale);
+        } else {
+            // Fall back to number format
+            $result = number_format(floatval($amount));
+        }
+        */
     }
 
     return $result;
@@ -814,8 +871,21 @@ function eval_conditions($conditions, $value)
                     }
                     break;
                 default:
-                    $value = isset($value[''][$key]) ? $value[''][$key] : null;
-                    $match = eval_conditions($compare, $value);
+                    $this_value = isset($value['']) ? $value[''] : null;
+                    if (is_string($key) && strpos($key, '.') !== false) {
+                        $parts = explode('.', $key);
+                        foreach ($parts as $part) {
+                            if (isset($this_value[$part])) {
+                                $this_value = $this_value[$part];
+                            } else {
+                                $this_value = null;
+                                break;
+                            }
+                        }
+                    } else {
+                        $this_value = isset($this_value[$key]) ? $this_value[$key] : null;
+                    }
+                    $match = eval_conditions($compare, $this_value);
                 }
             } else {
                 $this_value = $value;
