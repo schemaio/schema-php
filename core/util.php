@@ -670,13 +670,13 @@ function currency($params, $options = null)
     }
     if (is_array($options)) {
         if (isset($options['format'])) {
-            $format = $params['format'];
+            $format = $options['format'];
         }
         if (isset($options['negative'])) {
-            $negative = $params['negative'];
+            $negative = $options['negative'];
         }
         if (isset($options['code'])) {
-            $code = $params['code'];
+            $code = $options['code'];
         }
     }
 
