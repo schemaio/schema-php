@@ -574,7 +574,7 @@ function age($date)
     $time = is_numeric($date) ? (int)$date : strtotime($date);
     $seconds_elapsed = (time() - $time);
 
-    if ($seconds_elapsed < 60 && $seconds_elapsed >= 0) {
+    if ($seconds_elapsed < 60) {
         return 'just now';
     } else if ($seconds_elapsed >= 60 && $seconds_elapsed < 3600) {
         $num = floor($seconds_elapsed / 60);
