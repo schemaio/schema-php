@@ -142,11 +142,17 @@ class Request
     {
         Request::status($code);
 
+        $orig_path = $request['path'];
+        $orig_args = $request['args'];
+
         $code_request = $request;
         $code_request['view'] = null;
         $code_request['orig'] = null;
         $code_request['path'] = '/'.$code;
         $code_request = View::route($code_request);
+
+        $code_request['path'] = $orig_path;
+        $code_request['args'] = $orig_args;
 
         // Render code view if exists
         if (is_file($code_request['view_path'])) {
