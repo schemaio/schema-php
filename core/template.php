@@ -183,13 +183,13 @@ class TemplateEngine
     {
         $template = $this->create_template($file_path, $vars);
 
-        // Raw php, template, or file
+        // Raw string, template, php, or file
         $ext = substr($file_path, -4);
-        if ($ext === '.php') {
-            $content = $this->render_php($file_path);
-        } else if ($ext === '.tpl' || strpos($file_path, 'string:') === 0) {
+        if ($ext === '.tpl' || strpos($file_path, 'string:') === 0) {
             // Last argument is (false) to prevent var overwrites
             $content = $this->smarty->fetch($template, null, null, null, false, false);
+        } else if ($ext === '.php') {
+            $content = $this->render_php($file_path);
         } else {
             // Plain file
             $content = file_get_contents($file_path);
@@ -204,11 +204,14 @@ class TemplateEngine
             $child_vars = $this->finish_template($return_vars);
             return $child_vars;
         }
-        if (isset($GLOBALS['fwd_template_result'])) {
-            $result = $GLOBALS['fwd_template_result'];
-            unset($GLOBALS['fwd_template_result']);
+
+        // If result value was returned from template
+        if (isset($GLOBALS['__template_result'])) {
+            $result = $GLOBALS['__template_result'];
+            unset($GLOBALS['__template_result']);
             return $result;
         }
+
         return $content;
     }
 
@@ -315,10 +318,10 @@ class TemplateEngine
                 $this->set($key, $val);
             }
         } else if ($value) {
-            $GLOBALS['fwd_template_result'] = $value;
+            $GLOBALS['__template_result'] = $value;
         }
 
-        return $GLOBALS['fwd_template_result'];
+        return $GLOBALS['__template_result'];
     }
 
     /**
@@ -395,6 +398,67 @@ class TemplateEngine
     }
 
     /**
+     * Enable or disable safe mode
+     * Optionally pecify a custom set of functions which can be executed from templates
+     *
+     * @param  bool $mode
+     * @param  array $safe_functions
+     * @return array of safe_functions if enabled, null otherwise
+     */
+    public function safemode($mode = true, $safe_functions = null)
+    {
+        // Disable safemode
+        if ($mode === false) {
+            $this->smarty->disableSecurity();
+            return null;
+        }
+
+        // Create a new security policy
+        $policy = new \Smarty_Security($this->smarty);
+
+        // Enable safe PHP functions only, empty means a default subset is enabled
+        if (!is_array($safe_functions) || empty($safe_functions)) {
+            $plugins = array_keys(self::plugins());
+            $safe_functions = merge($plugins, array(
+                'isset', 'is_null', 'is_object', 'is_a', 'is_numeric', 'is_string', 'in_array', 'is_array',
+                'empty', 'count', 'sizeof', 'abs', 'rand', 'round', 'number_format', 'ceil', 'floor',
+                'date', 'time', 'strtotime', 'mktime', 'strlen', 'str_replace', 'trim', 'printf', 'sprintf',
+                'preg_match', 'explode', 'implode', 'split', 'min', 'max', 'strtolower', 'strtoupper',
+                'preg_replace', 'intval', 'floatval', 'escape', 'htmlspecialchars', 'htmlspecialchars_decode',
+                'current', 'key', 'end', 'next', 'sizeof', 'nl2br', 'sort', 'ksort', 'reset', 'strstr', 'strpos',
+                'addslashes', 'urlencode', 'urldecode', 'md5', 'sha1', 'string_tags', 'substr_count',
+                'array_shift', 'array_unshift', 'array_key_exists', 'array_push', 'array_unique', 'array_slice',
+                'array_diff', 'array_search', 'array_reverse',
+                'xml_parse', 'parse_url'
+            ));
+        }
+        $policy->php_functions = $safe_functions;
+
+        // Modifiers are the same as functions
+        $policy->php_modifiers = $safe_functions;
+
+        // Remove PHP tags from output
+        $policy->php_handling = \Smarty::PHP_REMOVE;
+
+        // Disable all static classes
+        $policy->static_classes = null;
+
+        // Disable all streams
+        $policy->streams = null;
+
+        // Disable all constants
+        $policy->allow_constants = false;
+
+        // Disable php tag parsing
+        $policy->allow_php_tag = false;
+
+        // Set the policy
+        $this->smarty->enableSecurity($policy);
+
+        return $safe_functions;
+    }
+
+    /**
      * Register helpers and compile methods
      *
      * @return void
@@ -435,9 +499,9 @@ class TemplateEngine
                     $view = $params['__view__'];
 
                     return '<?php $render_result = render('.$view.', '.serialize_to_php($params).'); '
-                        .' if (is_int($render_result)) { $GLOBALS[\'fwd_template_result\'] = $render_result; }'
+                        .' if (is_int($render_result)) { $GLOBALS[\'__template_result\'] = $render_result; }'
                         .' else { echo $render_result; } '
-                        .' if (isset($GLOBALS[\'fwd_template_result\'])) { return; } ?>';
+                        .' if (isset($GLOBALS[\'__template_result\'])) { return; } ?>';
                 }
             ),
 
@@ -452,7 +516,7 @@ class TemplateEngine
                     ));
 
                     return '<?php echo render('.serialize_to_php($params).') ?>'
-                        .'<?php if (isset($GLOBALS[\'fwd_template_result\'])) { return; } ?>';
+                        .'<?php if (isset($GLOBALS[\'__template_result\'])) { return; } ?>';
                 }
             ),
 
@@ -467,7 +531,7 @@ class TemplateEngine
                     ));
 
                     return '<?php render('.serialize_to_php($params).'); ?>'
-                        .'<?php if (isset($GLOBALS[\'fwd_template_result\'])) { return; } ?>';
+                        .'<?php if (isset($GLOBALS[\'__template_result\'])) { return; } ?>';
                 }
             ),
 
@@ -649,7 +713,7 @@ class TemplateEngine
                 {
                     if (isset($args[0])) {
                         // Save result to global context for render() to extract.
-                        return '<?php $GLOBALS[\'fwd_template_result\'] = '.$args[0].'; return; ?>';
+                        return '<?php $GLOBALS[\'__template_result\'] = '.$args[0].'; return; ?>';
                     } else {
                         return '<?php return; ?>';
                     }
