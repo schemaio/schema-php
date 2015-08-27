@@ -429,7 +429,8 @@ class TemplateEngine
                 'addslashes', 'urlencode', 'urldecode', 'md5', 'sha1', 'string_tags', 'substr_count',
                 'array_shift', 'array_unshift', 'array_key_exists', 'array_push', 'array_unique', 'array_slice',
                 'array_diff', 'array_search', 'array_reverse',
-                'xml_parse', 'parse_url'
+                'xml_parse', 'parse_url',
+                'get', 'put', 'post', 'delete'
             ));
         }
         $policy->php_functions = $safe_functions;
