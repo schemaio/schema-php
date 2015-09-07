@@ -1047,8 +1047,8 @@ function image_url($params)
     /**
      * Begin image processing
      */
-    $dest_width = $width;
-    $dest_height = $height;
+    $dest_width = $width ?: $src_width;
+    $dest_height = $height ?: $src_height;
 
     // Create blank dest image of the requested size
     $dest_image = imagecreatetruecolor($dest_width, $dest_height);
