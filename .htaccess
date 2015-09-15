@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
 
-    Options -MultiViews
+    Options -MultiViews -Indexes
     RewriteEngine On
 
     # Set base path when installed in a sub folder i.e. /store
