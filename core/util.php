@@ -1027,7 +1027,7 @@ function image_url($params)
 
         // Save source file to local cache
         if (is_writeable(dirname($orig_file_path))) {
-            imagejpeg($src_image, $orig_file_path, '100');
+            imagejpeg($src_image, $orig_file_path, '86');
         } else {
             throw new \Exception("Unable to save image in ".dirname($orig_file_path)."/ (permission denied)");
         }
