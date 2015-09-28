@@ -159,8 +159,17 @@ class Helper
              *          {get $blog from "/channels/blog/entries/$slug"}
              *          ...
              */
-            'args' => function($pattern = null, $view_tpl = null)
+            'args' => function($input = null, $view_tpl = null)
             {
+                $request = Template::engine()->get('request');
+
+                // Simple
+                if (is_numeric($input)) {
+                    return isset($request['args'][$input]) ? $request['args'][$input] : null;
+                }
+
+                // Pattern
+                $pattern = $input;
                 if (empty($pattern)) {
                     return;
                 }
@@ -188,7 +197,6 @@ class Helper
                 }
 
                 // Apply pattern to current request context args
-                $request = Template::engine()->get('request');
                 $args = $request['args'];
                 $new_args = array();
                 foreach ($parts as $key => $name) {
@@ -211,7 +219,7 @@ class Helper
                         }
                     }
                     // Greedy is the last arg
-                    if ($greedy) {
+                    if (isset($greedy)) {
                         break;
                     }
                 }
