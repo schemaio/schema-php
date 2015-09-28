@@ -37,34 +37,19 @@ class Controller
      */
     public static function load($name)
     {
-        $vars = Template::engine()->get();
-        $controller = self::route($name, $vars['request']);
-
-        if (!is_file($controller['path'])) {
-            if (!is_file($controller['extend']['path'])) {
-                throw new \Exception('Controller not found at '.($controller['path'] ?: 'undefined'));
-            }
-        }
-
         if (!isset(self::$classes)) {
             self::$classes = array();
             spl_autoload_register('\\Schema\\Controller::autoload');
         }
 
-        $class = "{$controller['namespace']}\\{$controller['class']}";
-        if (!isset(self::$classes[$class])) {
-            self::$classes[$class] = $controller;
+        $controller = self::route($name);
+        $class_path = $controller['class_path'];
+
+        if (!isset(self::$instances[$class_path])) {
+            self::$instances[$class_path] = new $class_path();
         }
 
-        if (!class_exists($class)) {
-            throw new \Exception($controller['class'].' not defined in '.$controller['path']);
-        }
-
-        if (!isset(self::$instances[$class])) {
-            self::$instances[$class] = new $class();
-        }
-
-        $controller['instance'] = self::$instances[$class];
+        $controller['instance'] = self::$instances[$class_path];
 
         return $controller;
     }
@@ -126,8 +111,59 @@ class Controller
      * @param  string $name
      * @param  array $request
      */
-    public static function route($name, $request)
+    public static function route($name)
     {
+        $controller = self::route_class($name);
+
+        if (!is_file($controller['file_path'])) {
+            if (!is_file($controller['extend']['file_path'])) {
+                throw new \Exception('Controller not found at '.($controller['file_path'] ?: 'undefined'));
+            }
+        }
+
+        $class_path = $controller['class_path'];
+
+        if (isset(self::$classes[$class_path])) {
+            return $controller;
+        }
+
+        self::$classes[$class_path] = $controller;
+
+        // Register all classes in this path
+        foreach (array($controller['extend'], $controller) as $ctrl) {
+            if (!$ctrl['file_path']) {
+                continue;
+            }
+            $base_path = str_replace($ctrl['file'], '', $ctrl['file_path']);
+            foreach (glob(dirname($ctrl['file_path']).'/*Controller.php') as $controller_file_path) {
+                $rel_parts = explode('/', $controller_file_path);
+                $rel_name = str_replace('Controller.php', '', array_pop($rel_parts));
+                $rel_controller = self::route_class($rel_name);
+                $rel_class_path = $rel_controller['class_path'];
+                if (!isset(self::$classes[$rel_class_path])) {
+                    self::$classes[$rel_class_path] = $rel_controller;
+                }
+            }
+        }
+
+        if (!class_exists($class_path)) {
+            throw new \Exception($controller['class'].' not defined in '.$controller['file_path']);
+        }
+
+        return $controller;
+    }
+
+    /**
+     * Get route to controller class params
+     *
+     * @param  string $name
+     * @return array $controller
+     */
+    public static function route_class($name)
+    {
+        $vars = Template::engine()->get();
+        $request = $vars['request'];
+
         $parts = explode('.', $name);
 
         $class_base_name = $parts[0];
@@ -141,24 +177,27 @@ class Controller
         $class_name = Util\camelize($class_base_name).'Controller';
         $class_method = isset($parts[1]) ? Util\underscore($parts[1]) : null;
         $class_file = $class_name.'.php';
-        $class_path = $class_base_path.$class_file;
+        $class_file_path = $class_base_path.$class_file;
 
         $namespace = "Schema\\".Util\camelize($request['template'])."Template";
+        $class_path = "{$namespace}\\{$class_name}";
+
         $extend_namespace = isset($request['extend_template'])
             ? "Schema\\".Util\camelize($request['extend_template'])."Template" : null;
-        $extend_class_path = isset($request['extend_template_path'])
+        $extend_file_path = isset($request['extend_template_path'])
             ? $request['extend_template_path'].'/controllers/'.$class_file : null;
 
         return array(
             'name' => $name,
             'namespace' => $namespace,
             'class' => $class_name,
+            'class_path' => $class_path,
             'file' => $class_file,
-            'path' => $class_path,
+            'file_path' => $class_file_path,
             'method' => $class_method,
             'extend' => array(
                 'namespace' => $extend_namespace,
-                'path' => $extend_class_path
+                'file_path' => $extend_file_path
             )
         );
     }
@@ -168,25 +207,20 @@ class Controller
      *
      * @param  string $class_name
      */
-    public static function autoload($class_name)
+    public static function autoload($class_path)
     {
         $controller = null;
-        if (isset(self::$classes[$class_name])) {
-            $controller = self::$classes[$class_name];
+        if (isset(self::$classes[$class_path])) {
+            $controller = self::$classes[$class_path];
         }
-        if ($controller && is_file($controller['path'])) {
-            // Include all controllers in this path, and also extend paths
+        if ($controller && is_file($controller['file_path'])) {
+            // Include controller in this path, and also extend paths
             foreach (array($controller['extend'], $controller) as $ctrl) {
-                if (!$ctrl['path']) {
+                if (!$ctrl['file_path']) {
                     continue;
                 }
-                $base_path = str_replace($ctrl['file'], '', $ctrl['path']);
-                foreach (glob(dirname($ctrl['path']).'/*Controller.php') as $controller_file_path) {
-                    self::autoload_file($controller_file_path, $ctrl);
-                    $this_file = str_replace($base_path, '', $controller_file_path);
-                    $this_class = $ctrl['namespace'].'\\'.str_replace('.php', '', $this_file);
-                    self::autoload_helpers($this_class);
-                }
+                self::autoload_file($ctrl);
+                self::autoload_helpers($ctrl['class_path']);
             }
         }
     }
@@ -194,12 +228,11 @@ class Controller
     /**
      * Auto load and evaluate a controller from a file
      *
-     * @param  string $controller_path
      * @param  array $controller
      */
-    public static function autoload_file($controller_path, $controller)
+    public static function autoload_file($controller)
     {
-        $class_contents = file_get_contents($controller_path);
+        $class_contents = file_get_contents($controller['file_path']);
 
         // Auto append controller namespace
         $class_contents = preg_replace(
@@ -215,7 +248,7 @@ class Controller
         } catch (\Exception $e) {
             $e_class = get_class($e);
             $message = $controller['class'].': '.$e_class.' "'.$e->getMessage()
-                .'" in '.$controller_path.' on line '.$e->getLine();
+                .'" in '.$controller['file_path'].' on line '.$e->getLine();
             throw new \Exception($message, $e->getCode(), $e);
         }
         ob_end_clean();
@@ -223,7 +256,7 @@ class Controller
         if ($result === false) {
             $error = error_get_last();
             $message = 'Parse error: '.$error['message']
-                .' in '.$controller_path.' on line '.$error['line'];
+                .' in '.$controller['file_path'].' on line '.$error['line'];
             $lines = explode("\n", htmlspecialchars($class_contents));
             $eline = $error['line']-1;
             $lines[$eline] = '<b style="background-color: #fffed9">'.$lines[$eline].'</b>';
