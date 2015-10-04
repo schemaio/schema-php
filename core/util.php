@@ -1097,7 +1097,7 @@ function image_url($params)
     // Write image file to local cache
     if (is_writeable(dirname($file_path))) {
         // Write the image to the correct path
-        imagejpeg($dest_image, $file_path, '100');
+        imagejpeg($dest_image, $file_path, '85');
     } else {
         throw new \Exception("Unable to save image in ".str_replace('//', '/', dirname($file_path))."/ (permission denied)");
     }
