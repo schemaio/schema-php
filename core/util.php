@@ -628,7 +628,7 @@ function age_date($date)
         return date('M j', $time);
     } else {
         // Past year
-        return date('M j, Y', $time);
+        return date('M Y', $time);
     }
 }
 
