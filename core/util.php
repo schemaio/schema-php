@@ -913,7 +913,11 @@ function eval_conditions($conditions, $value)
             }
         }
     } else {
-        $match = ($conditions == $value);
+        if (is_scalar($value) || !$value) {
+            $match = ($conditions == $value);
+        } else if (is_array($value) || $value instanceof \ArrayIterator) {
+            $match = in($conditions, $value);
+        }
     }
 
     return $match;
