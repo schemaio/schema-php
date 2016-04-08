@@ -261,13 +261,13 @@ function merge($set1, $set2)
 function in($val_a, $val_b = null)
 {
     if (is_scalar($val_a)) {
-        if (is_array($val_b) || $val_b instanceof \Schema\Resource) {
-            return in_array($val_a, (array)$val_b);
+        if (is_array($val_b)) {
+            return in_array($val_a, $val_b);
         } else if ($val_a && is_scalar($val_b)) {
             return strpos($val_b, $val_a) !== false;
         }
-    } else if (is_array($val_a) || $val_a instanceof \Schema\Resource) {
-        foreach ((array)$val_a as $k => $v) {
+    } else if (is_array($val_a)) {
+        foreach ($val_a as $k => $v) {
             if (!in($v, $val_b)) {
                 return false;
             }
@@ -435,7 +435,7 @@ function singularize($string)
     } else {
         return false;
     }
-    
+
     $singular = array (
         '/(quiz)zes$/i' => '\\1',
         '/(matr)ices$/i' => '\\1ix',
@@ -468,7 +468,7 @@ function singularize($string)
         'child' => 'children',
         'sex' => 'sexes',
         'move' => 'moves'
-    );  
+    );
     $ignore = array(
         'equipment',
         'information',
@@ -628,7 +628,7 @@ function age_date($date)
         return date('M j', $time);
     } else {
         // Past year
-        return date('M Y', $time);
+        return date('M j, Y', $time);
     }
 }
 
@@ -856,7 +856,7 @@ function eval_conditions($conditions, $value)
                         $match = false;
                     }
                     break;
-                case '$and': 
+                case '$and':
                     if (is_array($compare)) {
                         $match = true;
                         foreach ($compare as $compare_condition) {
@@ -913,15 +913,7 @@ function eval_conditions($conditions, $value)
             }
         }
     } else {
-        if (is_scalar($value) || !$value) {
-            $match = ($conditions == $value);
-        } else if (is_array($value) || $value instanceof \ArrayIterator) {
-            if (empty($conditions)) {
-                $match = ($conditions == $value);
-            } else {
-                $match = in($conditions, $value);
-            }
-        }
+        $match = ($conditions == $value);
     }
 
     return $match;
@@ -961,6 +953,7 @@ function image_url($params)
     }
 
     $file = isset($params['file']) ? $params['file'] : null;
+    $type = isset($params['type']) ? $params['type'] : null;
     $width = isset($params['width']) ? $params['width'] : null;
     $height = isset($params['height']) ? $params['height'] : null;
     $padded = isset($params['padded']) ? $params['padded'] : null;
@@ -973,6 +966,36 @@ function image_url($params)
         return;
     }
 
+    // Default to file type
+    if (!isset($type) && isset($file['contentType'])) {
+      $type = $file['contentType'];
+    }
+
+    // Determine image writer by type
+    // TODO: more formats: webp, etc
+    $image_write = null;
+    $image_ext = null;
+    switch ($type) {
+        case 'png':
+        case 'image/png':
+            $image_write = 'imagepng';
+            $image_ext = '.png';
+            break;
+        case 'gif':
+        case 'image/gif':
+            $image_write = 'imagegif';
+            $image_ext = '.gif';
+            break;
+        case 'jpg':
+        case 'jpeg':
+        case 'image/jpg':
+        case 'image/jpeg':
+        default:
+            $image_write = 'imagejpeg';
+            $image_ext = '.jpg';
+            break;
+    }
+
     // Build url path
     $id = "image.{$file['id']}";
     $name = "{$id}.{$file['md5']}";
@@ -980,8 +1003,8 @@ function image_url($params)
     if ($width || $height) $url .= ".{$width}x{$height}";
     if ($padded) $url .= ".padded";
     if ($anchor) $url .= ".{$anchor}";
-    $orig_url .= ".jpg";
-    $url .= ".jpg";
+    $orig_url .= $image_ext;
+    $url .= $image_ext;
 
     // Build file path
     $path = \Schema\Config::path('root');
@@ -992,7 +1015,7 @@ function image_url($params)
     if (is_file($file_path)) {
         return $url;
     }
-    
+
     if (is_file($orig_file_path)) {
         // Already cached
         $src_image = imagecreatefromstring(file_get_contents($orig_file_path));
@@ -1035,16 +1058,22 @@ function image_url($params)
 
         // Save source file to local cache
         if (is_writeable(dirname($orig_file_path))) {
-            imagejpeg($src_image, $orig_file_path, '86');
+            if ($image_write === 'imagejpeg') {
+                $image_write($src_image, $orig_file_path, '100');
+            } elseif ($image_write === 'imagepng') {
+                $image_write($src_image, $orig_file_path, '9');
+            } elseif ($image_write === 'imagegif') {
+                $image_write($src_image, $orig_file_path);
+            }
         } else {
             throw new \Exception("Unable to save image in ".dirname($orig_file_path)."/ (permission denied)");
         }
     }
-        
+
     // Source dimensions
     $src_width = imagesx($src_image);
     $src_height = imagesy($src_image);
-    
+
     // Proportional width or height?
     if (!$width) {
         $width = $src_width * ($height / $src_height);
@@ -1070,7 +1099,7 @@ function image_url($params)
     $dest_y = 0;
     $ratio_x = ($src_height / $dest_height);
     $ratio_y = ($src_width / $dest_width);
-    
+
     // Determine resize width, height position, with or without padding
     if (($padded && $ratio_y <= $ratio_x) || (!$padded && $ratio_x <= $ratio_y)) {
         $ratio = $ratio_x;
@@ -1099,13 +1128,26 @@ function image_url($params)
     $white = imagecolorallocate($dest_image, 255, 255, 255); // white
     imagefilledrectangle($dest_image, 0, 0, $width, $height, $white); // fill the background
 
+    // Preserve transparency
+    if ($image_write !== 'imagejpeg') {
+        imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
+        imagealphablending($dest_image, false);
+        imagesavealpha($dest_image, true);
+    }
+
     // Resample the image to a new size
     imagecopyresampled($dest_image, $src_image, $dest_x, $dest_y, 0, 0, $new_width, $new_height, $src_width, $src_height);
-    
+
     // Write image file to local cache
     if (is_writeable(dirname($file_path))) {
         // Write the image to the correct path
-        imagejpeg($dest_image, $file_path, '85');
+        if ($image_write === 'imagejpeg') {
+            $image_write($dest_image, $file_path, '100');
+        } elseif ($image_write === 'imagepng') {
+            $image_write($dest_image, $file_path, '9');
+        } elseif ($image_write === 'imagegif') {
+            $image_write($dest_image, $file_path);
+        }
     } else {
         throw new \Exception("Unable to save image in ".str_replace('//', '/', dirname($file_path))."/ (permission denied)");
     }
