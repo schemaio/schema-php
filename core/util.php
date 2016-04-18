@@ -975,11 +975,13 @@ function image_url($params)
     // TODO: more formats: webp, etc
     $image_write = null;
     $image_ext = null;
+    $image_quality = null;
     switch ($type) {
         case 'png':
         case 'image/png':
             $image_write = 'imagepng';
             $image_ext = '.png';
+            $image_quality = '8';
             break;
         case 'gif':
         case 'image/gif':
@@ -993,6 +995,7 @@ function image_url($params)
         default:
             $image_write = 'imagejpeg';
             $image_ext = '.jpg';
+            $image_quality = '86';
             break;
     }
 
@@ -1016,10 +1019,10 @@ function image_url($params)
         return $url;
     }
 
-    if (is_file($orig_file_path)) {
-        // Already cached
-        $src_image = imagecreatefromstring(file_get_contents($orig_file_path));
-    } else {
+    $src_data = null;
+
+    // Cache original image data
+    if (!is_file($orig_file_path)) {
         // Get file data directly from link to avoid bloating memory
         if (method_exists($file, 'link_url')) {
             $file_data_link = $file->link_url('data');
@@ -1049,25 +1052,29 @@ function image_url($params)
             return $default ?: '';
         }
 
-        // Create orig image from file data
-        $src_image = imagecreatefromstring($src_data);
-        if ($src_image === false) {
-            // Psuedo error
-            return "#/error-unsupported-image-type-or-format-or-corrupt{$url}";
+        // Write the original file
+        if (!file_put_contents($orig_file_path, $src_data)) {
+            return "#/error-unable-to-write-file{$url}";
         }
+    }
 
-        // Save source file to local cache
-        if (is_writeable(dirname($orig_file_path))) {
-            if ($image_write === 'imagejpeg') {
-                $image_write($src_image, $orig_file_path, '100');
-            } elseif ($image_write === 'imagepng') {
-                $image_write($src_image, $orig_file_path, '9');
-            } elseif ($image_write === 'imagegif') {
-                $image_write($src_image, $orig_file_path);
-            }
-        } else {
-            throw new \Exception("Unable to save image in ".dirname($orig_file_path)."/ (permission denied)");
-        }
+    // Return if image is not being modified
+    if ($orig_url === $url) {
+        return $orig_url;
+    }
+
+    // Create orig image from file data
+    if ($src_data) {
+        $src_image = imagecreatefromstring($src_data);
+    } else if (is_file($orig_file_path)) {
+        $src_image = imagecreatefromstring(file_get_contents($orig_file_path));
+    } else {
+        return "#/error-unknown{$url}";
+    }
+
+    // Image resource must exist
+    if ($src_image === false) {
+        return "#/error-unsupported-image-type-or-format-or-corrupt{$url}";
     }
 
     // Source dimensions
@@ -1142,9 +1149,9 @@ function image_url($params)
     if (is_writeable(dirname($file_path))) {
         // Write the image to the correct path
         if ($image_write === 'imagejpeg') {
-            $image_write($dest_image, $file_path, '100');
+            $image_write($dest_image, $file_path, $image_quality);
         } elseif ($image_write === 'imagepng') {
-            $image_write($dest_image, $file_path, '9');
+            $image_write($dest_image, $file_path, $image_quality);
         } elseif ($image_write === 'imagegif') {
             $image_write($dest_image, $file_path);
         }
