@@ -261,12 +261,12 @@ function merge($set1, $set2)
 function in($val_a, $val_b = null)
 {
     if (is_scalar($val_a)) {
-        if (is_array($val_b)) {
-            return in_array($val_a, $val_b);
+        if ((array)$val_b === $val_b || $val_b instanceof \ArrayIterator) {
+            return in_array($val_a, (array)$val_b);
         } else if ($val_a && is_scalar($val_b)) {
             return strpos($val_b, $val_a) !== false;
         }
-    } else if (is_array($val_a)) {
+    } else if ((array)$val_a === $val_a || $val_a instanceof \ArrayIterator) {
         foreach ($val_a as $k => $v) {
             if (!in($v, $val_b)) {
                 return false;
