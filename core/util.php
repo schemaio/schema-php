@@ -1138,7 +1138,7 @@ function image_url($params)
     // Preserve transparency
     if ($image_write !== 'imagejpeg') {
         imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
-        imagealphablending($dest_image, false);
+        imagealphablending($dest_image, true);
         imagesavealpha($dest_image, true);
     }
 
