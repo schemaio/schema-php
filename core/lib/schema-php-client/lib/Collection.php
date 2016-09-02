@@ -90,7 +90,7 @@ class Collection extends Resource
         }
         return $exists;
     }
-    
+
     /**
      * Get collection record or meta data
      *
@@ -106,7 +106,7 @@ class Collection extends Resource
             if ($index === "results") {
                 return $records;
             }
-            if ($record =& $records[$index]) {
+            if (is_scalar($index) && $record =& $records[$index]) {
                 return $record;
             }
             foreach ((array)$records as $key => $record) {
@@ -119,7 +119,7 @@ class Collection extends Resource
 
         return null;
     }
-    
+
     /**
      * Get raw record values
      *
@@ -147,7 +147,7 @@ class Collection extends Resource
 
         return $data;
     }
-    
+
     /**
      * Dump raw collection values
      *
@@ -189,7 +189,7 @@ class Collection extends Resource
         if ($this->pages) {
             $dump['pages'] = $this->pages;
         }
-        
+
         if ($print) {
             return print_r($dump, $return);
         } else {
