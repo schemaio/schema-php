@@ -1137,10 +1137,12 @@ function image_url($params)
 
     // Preserve transparency
     if ($image_write !== 'imagejpeg') {
-        imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
-        imagealphablending($dest_image, true);
+        imagealphablending($dest_image, false);
         imagesavealpha($dest_image, true);
+        imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
     }
+
+    //var_dump('ok!');exit;
 
     // Resample the image to a new size
     imagecopyresampled($dest_image, $src_image, $dest_x, $dest_y, 0, 0, $new_width, $new_height, $src_width, $src_height);
