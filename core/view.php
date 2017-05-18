@@ -43,14 +43,15 @@ class View
         $view_orig = isset($request['view']) ? $request['view'] : null;
         $view_required = isset($request['required']) ? $request['required'] : null;
 
-        // Get output from view
+        // Get output from view from view
         if (preg_match('/[^\/]+\.([^\/]+)$/', $route_path, $matches)) {
-            $view_output = $matches[1];
             $view = substr($route_path, 0, strrpos($route_path, '.'));
+            $view_output = isset($request['output']) ? $request['output'] : $matches[1];
         } else {
             $view = $route_path;
             $view_output = isset($request['output']) ? $request['output'] : 'html';
         }
+
         if ($view_output === 'php' || $view_output === 'tpl') {
             $view_output = 'html';
         }
@@ -323,7 +324,7 @@ class View
                 return $content;
             }
         }
-    
+
         $vars['content_for_layout'] = $content;
         return Template::engine()->render($layout_found_path, $vars);
     }
