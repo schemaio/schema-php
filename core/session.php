@@ -154,7 +154,7 @@ class Session extends Util\ArrayInterface
             self::$data = Request::client_request('get', self::$uri);
         } catch (\Exception $e) {
             self::$error = $e->getMessage();
-            if (strpos(self::$error, 'trial expired') >= 0) {
+            if (strpos(self::$error, 'trial expired') !== false) {
               $_SESSION = array('_EXPIRED' => true);
               return;
             }
