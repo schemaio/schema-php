@@ -65,6 +65,8 @@ class Request
         // Route the template
         $request = Template::route($request);
 
+        header('Access-Control-Allow-Origin: *');
+
         if (!is_dir($request['template_path'])) {
             return Request::dispatch_notfound_template($request);
         }
