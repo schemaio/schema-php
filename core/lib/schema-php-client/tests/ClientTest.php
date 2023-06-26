@@ -1,6 +1,6 @@
 <?php
 
-namespace Schema;
+namespace Swell;
 
 class ClientTest extends TestCase
 {
