@@ -127,16 +127,17 @@ class Session extends Util\ArrayInterface
         }
         $client = Request::client_config();
         if (!isset($client['session']) || $client['session']) {
-            session_set_save_handler(
-                function(){return true;},
-                function(){return true;},
-                '\\Schema\\Session::read',
-                '\\Schema\\Session::write',
-                '\\Schema\\Session::destroy',
-                function(){return true;}
-            );
+            // session_set_save_handler(
+            //     function(){return true;},
+            //     function(){return true;},
+            //     '\\Schema\\Session::read',
+            //     '\\Schema\\Session::write',
+            //     '\\Schema\\Session::destroy',
+            //     function(){return true;}
+            // );
         }
         session_start();
+        //$_SESSION = array();
     }
 
     /**

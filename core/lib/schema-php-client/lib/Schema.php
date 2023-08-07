@@ -1,7 +1,7 @@
 <?php
 
 if (!function_exists('json_decode')) {
-    throw new Exception('Schema API Client requires the JSON PHP extension');
+    throw new Exception('Swell API library requires the JSON PHP extension');
 }
 
 $basedir = dirname(__FILE__);
