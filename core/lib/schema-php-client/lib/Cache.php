@@ -38,6 +38,11 @@ class Cache
   public $indexes = [];
 
   /**
+   * @var string
+   */
+  protected $env;
+
+  /**
    * @param  string $client_id
    * @param  string $client_key
    * @param  array $options
