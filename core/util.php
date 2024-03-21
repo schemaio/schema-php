@@ -211,7 +211,7 @@ function exception_handler ($e)
 function dump ()
 {
     foreach (func_get_args() as $var) {
-        $val = (($var instanceof ArrayInterface) || ($var instanceof \Schema\Resource))
+        $val = (($var instanceof ArrayInterface) || ($var instanceof \Swell\Resource))
             ? $var->dump(true)
             : print_r($var, true);
 
@@ -509,10 +509,10 @@ function singularize($string)
  */
 function sortby($array)
 {
-    if ($array instanceof \Schema\Collection) {
+    if ($array instanceof \Swell\Collection) {
         $collection = $array;
         $array = $collection->records();
-    } else if ($array instanceof \Schema\Record) {
+    } else if ($array instanceof \Swell\Record) {
         $record = $array;
         $array = $record->data();
     } else if (!is_array($array)) {
@@ -935,7 +935,7 @@ function eval_formula($expression, $scope = null)
  * Process and cache an image file field, returning a local cache URL
  *
  * @param  array $params
- * - file      \Schema\Record object referencing a file\
+ * - file      \Swell\Record object referencing a file
  * - width     (optional) image width? default: original size
  * - height    (optional) image height? default: original size
  * - padded    (optional) pad image to avoid cropping? default: false

@@ -22,7 +22,7 @@ class Request
     private static $session;
 
     /**
-     * @var \Schema\Client
+     * @var \Swell\Client
      */
     private static $client;
 
@@ -531,7 +531,7 @@ class Request
      */
     public static function setup()
     {
-        require_once(Config::path('core', 'lib/schema-php-client/lib/Schema.php'));
+        require_once(Config::path('core', 'lib/schema-php-client/lib/Swell.php'));
         
         set_error_handler('\\Schema\\Util\error_handler', error_reporting());
         set_exception_handler('\\Schema\\Util\exception_handler');
@@ -726,13 +726,13 @@ class Request
     /**
      * Get client adapter
      *
-     * @return \Schema\Client
+     * @return \Swell\Client
      */
     public static function client()
     {
         if (!self::$client) {
             $config = self::client_config();
-            self::$client = new \Schema\Client($config['id'], $config['key'], $config);
+            self::$client = new \Swell\Client($config['id'], $config['key'], $config);
             self::$client = Event::trigger('request', 'client', self::$client);
         }
 
