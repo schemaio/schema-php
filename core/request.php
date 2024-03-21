@@ -531,7 +531,7 @@ class Request
      */
     public static function setup()
     {
-        require_once(Config::path('core', 'lib/schema-php-client/lib/Schema.php'));
+        require_once(Config::path('core', 'lib/schema-php-client/lib/Swell.php'));
         
         set_error_handler('\\Schema\\Util\error_handler', error_reporting());
         set_exception_handler('\\Schema\\Util\exception_handler');
