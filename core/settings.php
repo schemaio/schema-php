@@ -17,7 +17,7 @@ class Settings extends Util\ArrayInterface
     protected $records;
 
     /**
-     * @var \Schema\Client
+     * @var \Swell\Client
      */
     protected $client;
 
