@@ -154,9 +154,8 @@ class Client
       $this->params = array_merge($this->params, $merge);
     } elseif (is_string($key = $merge)) {
       return $this->params[$key];
-    } else {
-      return $this->params;
     }
+    return $this->params;
   }
 
   /**
