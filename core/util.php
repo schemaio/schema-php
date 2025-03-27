@@ -966,13 +966,24 @@ function image_url($params)
         return;
     }
 
-    // Default to file type
+    // Default to file type from content type
     if (!isset($type) && isset($file['contentType'])) {
-      $type = $file['contentType'];
+        $type = $file['contentType'];
+    }
+    
+    // Fallback: Check filename extension if available
+    if ((!isset($type) || $type == 'application/octet-stream') && isset($file['filename'])) {
+        $ext = strtolower(pathinfo($file['filename'], PATHINFO_EXTENSION));
+        if ($ext == 'png') {
+            $type = 'image/png';
+        } else if ($ext == 'gif') {
+            $type = 'image/gif';
+        } else if ($ext == 'jpg' || $ext == 'jpeg') {
+            $type = 'image/jpeg';
+        }
     }
 
     // Determine image writer by type
-    // TODO: more formats: webp, etc
     $image_write = null;
     $image_ext = null;
     $image_quality = null;
@@ -1038,9 +1049,6 @@ function image_url($params)
             return $url;
         }
 
-        // TODO: Need to clear existing image.id
-        // ...
-
         // Convert image data from explicit or implicit base64 encoding
         if (is_array($file_data) && isset($file_data['$binary'])) {
             $src_data = base64_decode($file_data);
@@ -1086,6 +1094,18 @@ function image_url($params)
         $width = $src_width * ($height / $src_height);
     } else if (!$height) {
         $height = $src_height * ($width / $src_width);
+    }
+
+    // Prevent scaling up beyond original dimensions
+    if ($width > $src_width) {
+        $width = $src_width;
+        // Recalculate height proportionally
+        $height = $src_height * ($width / $src_width);
+    }
+    if ($height > $src_height) {
+        $height = $src_height;
+        // Recalculate width proportionally
+        $width = $src_width * ($height / $src_height);
     }
 
     /**
@@ -1135,14 +1155,19 @@ function image_url($params)
     $white = imagecolorallocate($dest_image, 255, 255, 255); // white
     imagefilledrectangle($dest_image, 0, 0, $width, $height, $white); // fill the background
 
-    // Preserve transparency
-    if ($image_write !== 'imagejpeg') {
+    if ($image_write === 'imagepng') {
+        // Check if source image has transparency
+        $transparent = imagecolortransparent($src_image);        
+        
+        // Always enable alpha channel for PNGs
+        imagealphablending($dest_image, false);
+        imagesavealpha($dest_image, true);
+        imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
+    } else if ($image_write === 'imagegif') {
         imagealphablending($dest_image, false);
         imagesavealpha($dest_image, true);
         imagecolortransparent($dest_image, imagecolorallocatealpha($dest_image, 255, 255, 255, 127));
     }
-
-    //var_dump('ok!');exit;
 
     // Resample the image to a new size
     imagecopyresampled($dest_image, $src_image, $dest_x, $dest_y, 0, 0, $new_width, $new_height, $src_width, $src_height);
@@ -1161,6 +1186,5 @@ function image_url($params)
         throw new \Exception("Unable to save image in ".str_replace('//', '/', dirname($file_path))."/ (permission denied)");
     }
 
-    // Finally
     return $url;
 }
